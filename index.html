@@ -3,875 +3,311 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>象棋卜卦 V1.0.12 - 學員模式介面極簡化</title>
+    <title>AI 魔法畫家 - 直接生成版</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        /* CSS for aesthetics and responsiveness */
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap');
+        
         body {
-            font-family: '微軟正黑體', 'Microsoft JhengHei', sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #f0f4f8; /* 淺藍灰背景 */
-            line-height: 1.6;
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: #FFF9E6; 
+            color: #333;
+            overflow-x: hidden;
         }
-        .header {
-            background-color: #4a044e; /* 深紫色，沉穩莊重 */
-            color: white;
-            padding: 20px 15px;
-            text-align: center;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+
+        .sticky-basket {
+            position: sticky;
+            top: 10px;
+            z-index: 50;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(8px);
+            border-radius: 2rem;
+            border: 4px solid #FB923C;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
         }
-        .header h1 { margin: 0; font-size: 1.8em; }
-        .container {
-            max-width: 960px;
-            margin: 20px auto;
-            padding: 0 15px;
+
+        .category-card {
+            background: white;
+            border-radius: 2rem;
+            border: 5px solid;
+            box-shadow: 0 8px 0 0 rgba(0,0,0,0.05);
         }
-        .card {
-            background-color: white;
-            border-radius: 12px;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
-            padding: 30px;
-            margin-bottom: 25px;
-            border-top: 5px solid #a00000; /* 突出的紅色邊框 */
-        }
-        
-        /* Tab Navigation Styles */
-        #nav-tabs {
+
+        .prompt-tag {
+            border: 3px solid #eee;
+            transition: all 0.2s;
             display: flex;
-            border-bottom: 2px solid #ccc;
-            margin-bottom: 20px;
-        }
-        .tab-button {
-            padding: 10px 20px;
-            cursor: pointer;
-            background-color: #e2e8f0;
-            border: 1px solid #ccc;
-            border-bottom: none;
-            border-top-left-radius: 8px;
-            border-top-right-radius: 8px;
-            margin-right: 5px;
-            transition: background-color 0.3s, color 0.3s;
-            font-weight: bold;
-        }
-        .tab-button.active {
-            background-color: white;
-            color: #a00000;
-            border-color: #a00000;
-            border-bottom: 2px solid white;
-            margin-bottom: -2px;
-        }
-
-        textarea {
-            border: 1px solid #ced4da;
-            padding: 10px;
-            border-radius: 6px;
-            width: 100%;
-            box-sizing: border-box;
-            margin-top: 5px;
-            transition: border-color 0.3s;
-        }
-        textarea:focus { border-color: #4a044e; outline: none; }
-
-        /* --- 卦位顯示框架 (Center, Left, Right, Top, Bottom) --- */
-        #hexagram-frame, #quick-hexagram-frame {
-            display: grid;
-            grid-template-areas:
-                ". top ."
-                "left center right"
-                ". bottom .";
-            grid-template-columns: 1fr 1fr 1fr;
-            grid-template-rows: auto auto auto;
-            gap: 15px;
-            margin: 30px auto;
-            padding: 20px;
-            max-width: 400px;
-            background-color: #f7f9fb;
-            border: 2px solid #a00000;
-            border-radius: 10px;
-            position: relative;
-        }
-
-        .piece-slot {
-            height: 120px;
-            display: flex;
-            flex-direction: column;
+            flex-direction: column; 
             align-items: center;
             justify-content: center;
-            text-align: center;
-            background-color: #e3e8ee;
-            border: 2px dashed #999;
-            border-radius: 8px;
-            transition: background-color 0.3s;
-        }
-        /* 學員模式的卦位空間略微縮小，並移除標題的額外間距 */
-        .quick-mode-slot {
-             height: 110px;
-             justify-content: space-around; /* 讓標題和棋子均勻分佈 */
-             padding: 10px 0;
-        }
-
-
-        /* 定位 */
-        #slot-top, #quick-slot-top { grid-area: top; }
-        #slot-left, #quick-slot-left { grid-area: left; }
-        #slot-center, #quick-slot-center { grid-area: center; background-color: #fff8e8; border-color: #a00000; } /* 卦主特殊顏色 */
-        #slot-right, #quick-slot-right { grid-area: right; }
-        #slot-bottom, #quick-slot-bottom { grid-area: bottom; }
-        
-        .slot-title {
-            font-size: 0.9em;
-            color: #4a044e;
-            margin-bottom: 5px;
-            font-weight: bold;
-        }
-        /* V1.0.12: 學員模式標題間距極簡化 */
-        .quick-mode-slot .slot-title {
-            margin: 0;
-            padding: 0;
-            font-size: 1.0em; /* 讓卦位名稱更清晰 */
-        }
-        
-        /* 1. 卜卦模式：標準藥丸形棋子樣式 (displayed-piece) */
-        .displayed-piece {
-            padding: 8px 15px;
-            border-radius: 20px;
-            font-weight: 700;
-            color: white;
-            text-align: center;
-            font-size: 1.1em;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-            min-width: 70px;
-            margin-top: 5px;
-        }
-
-        /* 2. 學員模式：圓形棋子樣式 (circular-piece) */
-        .circular-piece {
-            width: 55px;
-            height: 55px;
-            border-radius: 50%; /* Make it a circle */
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 0; /* Remove padding as width/height are set */
-            font-size: 1.2em; /* Slightly larger text */
-            font-weight: 700;
-            color: white;
-            text-align: center;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-            margin-top: 5px;
-            line-height: 1; /* Ensure text is vertically centered */
-        }
-
-        /* 紅色（陽）棋子 */
-        .red-piece { background-color: #d9534f; }
-        /* 黑色（陰）棋子 */
-        .black-piece { background-color: #343a40; }
-
-        .btn-draw {
-            padding: 15px 30px;
-            background-color: #a00000;
-            color: white;
-            border: none;
-            border-radius: 8px;
+            padding: 1rem 0.25rem;
+            border-radius: 1.25rem;
+            background: white;
             cursor: pointer;
-            font-weight: bold;
-            font-size: 1.1em;
-            transition: background-color 0.3s, transform 0.1s;
-            display: block;
-            width: 100%;
-            margin-top: 15px;
-        }
-        .btn-draw:disabled {
-            background-color: #ccc;
-            cursor: not-allowed;
-        }
-        .btn-draw:hover:not(:disabled) {
-            background-color: #800000;
-            transform: translateY(-1px);
         }
 
-        @media (max-width: 600px) {
-            #hexagram-frame, #quick-hexagram-frame {
-                grid-template-columns: 1fr 1.5fr 1fr;
-                gap: 10px;
-            }
-            .piece-slot { height: 100px; }
-            .displayed-piece { font-size: 1em; padding: 6px 12px; }
-            .circular-piece { width: 50px; height: 50px; font-size: 1.1em; } /* Mobile optimization */
-            .slot-title { font-size: 0.8em; }
+        .prompt-tag .emoji { font-size: 2.8rem; line-height: 1.1; }
+        .prompt-tag .label { font-size: 1.1rem; font-weight: 900; }
+
+        .prompt-item {
+            display: inline-flex;
+            align-items: center;
+            background: #fff;
+            border: 3px solid #333;
+            padding: 6px 14px;
+            margin: 4px;
+            border-radius: 50px;
+            font-weight: 900;
+            box-shadow: 3px 3px 0px #333;
         }
+
+        /* 顏色定義 */
+        .color-blue { border-color: #3B82F6; color: #1E40AF; }
+        .color-green { border-color: #10B981; color: #065F46; }
+        .color-red { border-color: #EF4444; color: #991B1B; }
+        .color-yellow { border-color: #F59E0B; color: #92400E; }
+        .color-purple { border-color: #8B5CF6; color: #5B21B6; }
+        .color-pink { border-color: #EC4899; color: #9D174D; }
+        .color-orange { border-color: #F97316; color: #9A3412; }
+
+        /* 圖片生成展示區 */
+        #result-container {
+            display: none;
+            animation: slideUp 0.5s ease-out;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .loader {
+            border: 8px solid #f3f3f3;
+            border-top: 8px solid #fb923c;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
-<body>
-    <div class="header">
-        <h1>象棋卜卦師 V1.0.12</h1>
-        <p>易經中醫佛法智慧解卦 - 學員模式介面極簡化</p>
-    </div>
+<body class="min-h-screen pb-20">
 
-    <div class="container">
-        <!-- 版本與時區資訊 -->
-        <div class="text-right text-gray-500 text-sm mt-2 pb-3 border-b border-gray-300">
-            版本編號: **V1.0.12** | UTC+8 時間: <span id="current-time"></span>
-        </div>
+    <header class="p-6 text-center">
+        <h1 class="text-3xl md:text-4xl font-black text-orange-500">🎨 AI 魔法畫家</h1>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 space-y-8">
         
-        <!-- Tab Navigation -->
-        <div id="nav-tabs">
-            <button class="tab-button active" onclick="switchView('main-divination')">【卜卦解讀模式】</button>
-            <button class="tab-button" onclick="switchView('quick-generate')">【學員專用：快速起卦】</button>
-        </div>
-
-        <!-- 1. 卜卦解讀模式 (原版功能) -->
-        <div id="view-main-divination">
-            <div class="card">
-                <h2>【卦象起示 - 抽籤定卦位】</h2>
-                <form id="divination-form">
-                    <label for="question" class="block font-bold text-gray-700 mt-4 mb-2">您的問題（請誠心書寫）：</label>
-                    <textarea id="question" name="question" rows="3" placeholder="例如：我接下來一年的財運如何？" required></textarea>
-
-                    <div class="mt-6 p-4 bg-yellow-50 border-l-4 border-yellow-500 rounded-lg">
-                        <p class="font-bold text-lg text-yellow-800">步驟：請點擊 **「抽出棋子」** 按鈕 5 次</p>
-                        <p class="text-sm text-yellow-700 mt-1">系統將隨機抽子，並依序擺放至：**中間 → 左邊 → 右邊 → 上面 → 下面**。</p>
-                    </div>
-                    
-                    <button type="button" class="btn-draw" id="draw-button">
-                        <span id="draw-text">抽出第 1 支棋子 (共 5 支)</span>
-                    </button>
-
-                    <div id="hexagram-frame">
-                        <!-- 4. 上面 (長輩) -->
-                        <div id="slot-top" class="piece-slot">
-                            <div class="slot-title">4. 上面 (長輩)</div>
-                            <div id="piece-display-top">待抽...</div>
-                        </div>
-                        <!-- 2. 左邊 (平輩男性) -->
-                        <div id="slot-left" class="piece-slot">
-                            <div class="slot-title">2. 左邊 (平輩男性)</div>
-                            <div id="piece-display-left">待抽...</div>
-                        </div>
-                        <!-- 1. 中間 (卦主：我) -->
-                        <div id="slot-center" class="piece-slot">
-                            <div class="slot-title">1. 中間 (卦主：我)</div>
-                            <div id="piece-display-center">待抽...</div>
-                        </div>
-                        <!-- 3. 右邊 (平輩女性) -->
-                        <div id="slot-right" class="piece-slot">
-                            <div class="slot-title">3. 右邊 (平輩女性)</div>
-                            <div id="piece-display-right">待抽...</div>
-                        </div>
-                        <!-- 5. 下面 (晚輩) -->
-                        <div id="slot-bottom" class="piece-slot">
-                            <div class="slot-title">5. 下面 (晚輩)</div>
-                            <div id="piece-display-bottom">待抽...</div>
-                        </div>
-                    </div>
-
-                    <button type="submit" class="btn-draw" id="submit-button" disabled style="background-color: #28a745;">提交卜卦並解讀</button>
-                </form>
+        <!-- 籃子與控制區 -->
+        <section class="sticky-basket p-4 md:p-6">
+            <div class="flex items-center justify-between mb-3">
+                <h3 class="font-black text-xl text-orange-600 flex items-center gap-2">🧺 魔法籃子</h3>
+                <span id="counter" class="bg-orange-100 text-orange-600 px-3 py-1 rounded-full text-sm font-bold">0 個靈感</span>
             </div>
-
-            <div class="card" id="result-area" style="display: none;">
-                <h2>【卦象解讀結果】</h2>
-                <div id="hexagram-display"></div>
-                <!-- 新增格局分析區塊 -->
-                <div id="formation-output"></div> 
-                <div id="interpretation-output"></div>
-                <div id="guidance-output" class="p-4 mt-5 bg-gray-50 border border-gray-200 rounded-lg"></div>
+            
+            <div id="prompt-display" class="w-full min-h-[80px] max-h-[120px] bg-orange-50/50 rounded-2xl p-3 mb-4 flex flex-wrap gap-1 content-start border-2 border-dashed border-orange-200 overflow-y-auto">
+                <span class="text-orange-300 font-bold italic p-2">點選下方的圖卡來組合...</span>
             </div>
-        </div>
-        
-        <!-- 2. 學員快速起卦模式 (V1.0.12: 介面極簡化) -->
-        <div id="view-quick-generate" style="display: none;">
-             <div class="card">
-                <h2>【學員專用：一鍵快速起卦】</h2>
-                <div class="mt-6 p-4 bg-purple-50 border-l-4 border-purple-500 rounded-lg">
-                    <p class="font-bold text-lg text-purple-800">用途：用於學員練習解卦、紀錄卦象代碼。</p>
-                    <p class="text-sm text-purple-700 mt-1">點擊後將自動抽取五支棋子，並依序擺放至：**中間 → 左邊 → 右邊 → 上面 → 下面**。</p>
-                </div>
-                
-                <button type="button" class="btn-draw" id="quick-draw-button" style="background-color: #8a2be2;">
-                    一鍵生成 5 支棋子
+            
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                <button onclick="generateImage()" id="gen-btn" class="col-span-2 md:col-span-1 bg-gradient-to-r from-orange-400 to-pink-500 text-white py-4 rounded-xl font-black text-xl shadow-[0_6px_0_0_#c2410c] flex items-center justify-center gap-2 border-2 border-white transform active:scale-95 transition">
+                    <i class="fas fa-wand-magic-sparkles"></i> 變出圖片
                 </button>
-                
-                <div id="quick-hexagram-frame">
-                    
-                    <!-- 4th Draw -> 上面 -->
-                    <div id="quick-slot-top" class="piece-slot quick-mode-slot">
-                        <div class="slot-title">上面</div>
-                        <div id="quick-piece-display-top">待生成...</div>
-                    </div>
-                    
-                    <!-- 2nd Draw -> 左邊 -->
-                    <div id="quick-slot-left" class="piece-slot quick-mode-slot">
-                        <div class="slot-title">左邊</div>
-                        <div id="quick-piece-display-left">待生成...</div>
-                    </div>
-                    
-                    <!-- 1st Draw -> 中間 -->
-                    <div id="quick-slot-center" class="piece-slot quick-mode-slot">
-                        <div class="slot-title">中間</div>
-                        <div id="quick-piece-display-center">待生成...</div>
-                    </div>
-                    
-                    <!-- 3rd Draw -> 右邊 -->
-                    <div id="quick-slot-right" class="piece-slot quick-mode-slot">
-                        <div class="slot-title">右邊</div>
-                        <div id="quick-piece-display-right">待生成...</div>
-                    </div>
-                    
-                    <!-- 5th Draw -> 下面 -->
-                    <div id="quick-slot-bottom" class="piece-slot quick-mode-slot">
-                        <div class="slot-title">下面</div>
-                        <div id="quick-piece-display-bottom">待生成...</div>
-                    </div>
-                </div>
+                <button onclick="copyFullPrompt()" class="bg-green-500 text-white py-4 rounded-xl font-black text-lg shadow-[0_6px_0_0_#15803d] border-2 border-white">
+                    <i class="fas fa-copy"></i> 複製咒語
+                </button>
+                <button onclick="clearPrompt()" class="bg-gray-400 text-white py-4 rounded-xl font-black text-lg shadow-[0_6px_0_0_#4b5563] border-2 border-white">
+                    重來
+                </button>
+            </div>
+        </section>
 
-                <div id="quick-result-output" class="p-4 bg-gray-100 border border-gray-300 rounded-lg mt-5" style="display: none;">
-                    <h4 class="font-bold text-gray-800 mb-2">【學員紀錄：抽籤順序代碼】</h4>
-                    <p class="text-sm text-gray-600 mb-2">請複製下方代碼，順序為：**[第1抽(中), 第2抽(左), 第3抽(右), 第4抽(上), 第5抽(下)]**：</p>
-                    <textarea id="quick-data-output" rows="2" readonly class="bg-white text-base font-mono cursor-pointer"></textarea>
-                    <button onclick="copyToClipboard('quick-data-output')" class="mt-2 text-sm text-white bg-blue-600 hover:bg-blue-700 p-2 rounded-md transition duration-150">複製代碼</button>
-                    <div id="copy-message" class="mt-2 text-green-600 hidden">已複製！</div>
+        <!-- 圖片顯示區 -->
+        <section id="result-container" class="bg-white rounded-[2.5rem] p-6 border-8 border-orange-200 shadow-xl overflow-hidden">
+            <div id="loading-area" class="hidden flex flex-col items-center justify-center py-12">
+                <div class="loader mb-4"></div>
+                <p class="text-orange-500 font-black text-2xl animate-pulse">正在施魔法，請等一下下... ✨</p>
+            </div>
+            <div id="image-area" class="hidden flex flex-col items-center">
+                <h2 class="text-2xl font-black text-gray-700 mb-4">✨ 魔法圖片變出來了！</h2>
+                <img id="output-image" class="rounded-3xl shadow-2xl max-w-full h-auto border-4 border-white" alt="生成的魔法圖片">
+                <button onclick="downloadImg()" class="mt-6 bg-blue-500 text-white px-8 py-3 rounded-full font-bold shadow-lg hover:bg-blue-400 transition">
+                    <i class="fas fa-download mr-2"></i> 儲存這張畫
+                </button>
+            </div>
+        </section>
+
+        <!-- 選項區塊 (簡化範例) -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+            <div class="category-card border-blue-400 p-4 color-blue">
+                <h4 class="font-black text-lg mb-4 text-center">🦁 動物</h4>
+                <div class="grid grid-cols-2 gap-2">
+                    <button class="prompt-tag" onclick="addToPrompt('大貓咪', 'A giant fluffy cat')"><span class="emoji">🐱</span><span class="label">貓咪</span></button>
+                    <button class="prompt-tag" onclick="addToPrompt('恐龍', 'A cute dinosaur')"><span class="emoji">🦖</span><span class="label">恐龍</span></button>
+                    <button class="prompt-tag" onclick="addToPrompt('獨角獸', 'Magical unicorn')"><span class="emoji">🦄</span><span class="label">獨角獸</span></button>
+                    <button class="prompt-tag" onclick="addToPrompt('太空人', 'Little astronaut')"><span class="emoji">👨‍🚀</span><span class="label">太空人</span></button>
+                </div>
+            </div>
+
+            <div class="category-card border-green-400 p-4 color-green">
+                <h4 class="font-black text-lg mb-4 text-center">🏃 動作</h4>
+                <div class="grid grid-cols-2 gap-2">
+                    <button class="prompt-tag" onclick="addToPrompt('在跳舞', 'dancing happily')"><span class="emoji">💃</span><span class="label">跳舞</span></button>
+                    <button class="prompt-tag" onclick="addToPrompt('在飛', 'flying in the sky')"><span class="emoji">🕊️</span><span class="label">在飛</span></button>
+                    <button class="prompt-tag" onclick="addToPrompt('在游泳', 'swimming in the pool')"><span class="emoji">🏊</span><span class="label">游泳</span></button>
+                    <button class="prompt-tag" onclick="addToPrompt('在吃冰', 'eating ice cream')"><span class="emoji">🍦</span><span class="label">吃冰</span></button>
+                </div>
+            </div>
+
+            <div class="category-card border-yellow-400 p-4 color-yellow">
+                <h4 class="font-black text-lg mb-4 text-center">🌍 地點</h4>
+                <div class="grid grid-cols-2 gap-2">
+                    <button class="prompt-tag" onclick="addToPrompt('彩虹橋', 'on a rainbow bridge')"><span class="emoji">🌈</span><span class="label">彩虹</span></button>
+                    <button class="prompt-tag" onclick="addToPrompt('城堡', 'inside a magic castle')"><span class="emoji">🏰</span><span class="label">城堡</span></button>
+                    <button class="prompt-tag" onclick="addToPrompt('森林', 'in a deep green forest')"><span class="emoji">🌳</span><span class="label">森林</span></button>
+                    <button class="prompt-tag" onclick="addToPrompt('外太空', 'in the deep space')"><span class="emoji">🚀</span><span class="label">太空</span></button>
+                </div>
+            </div>
+
+            <div class="category-card border-purple-400 p-4 color-purple">
+                <h4 class="font-black text-lg mb-4 text-center">🖌️ 風格</h4>
+                <div class="grid grid-cols-2 gap-2">
+                    <button class="prompt-tag" onclick="addToPrompt('蠟筆', 'crayon drawing style, high quality')"><span class="emoji">🖍️</span><span class="label">蠟筆</span></button>
+                    <button class="prompt-tag" onclick="addToPrompt('樂高', 'made of Lego blocks')"><span class="emoji">🧱</span><span class="label">樂高</span></button>
+                    <button class="prompt-tag" onclick="addToPrompt('黏土', '3D clay animation style')"><span class="emoji">🧸</span><span class="label">黏土</span></button>
+                    <button class="prompt-tag" onclick="addToPrompt('電影', 'cinematic lighting, 8k render')"><span class="emoji">🎬</span><span class="label">電影感</span></button>
                 </div>
             </div>
         </div>
-
-        <div class="card">
-            <h2>【網頁設計師版本紀錄】</h2>
-            <p>
-                **版本紀錄 V1.0.12** (2025-10-13 18:04:00, UTC+8)
-            </p>
-            <ul>
-                <li>**介面極簡化 (學員模式)：** 移除「學員專用：快速起卦」中，卦位標題中的**序號**和**角色提示**，只保留**純粹的卦位名稱**（中間/左邊/右邊/上面/下面），使學員更能專注於棋子排列。</li>
-                <li>**介面清理 (學員模式)：** 繼承 V1.0.11，移除卦位標題後方多餘的抽取序號文字。</li>
-                <li>**核心修訂：** 繼承 V1.0.9，確保紅方衛士為 **仕** (陽)，黑方衛士為 **士** (陰)。</li>
-            </ul>
-        </div>
-    </div>
+    </main>
 
     <script>
-        // 4. 時區統一採用UTC+8
-        function updateTime() {
-            const now = new Date();
-            // 轉換為 UTC+8 (台灣時區)
-            const localTime = new Date(now.getTime() + (8 * 60 * 60 * 1000));
-            document.getElementById('current-time').textContent = localTime.toISOString().replace('T', ' ').substring(0, 19);
-        }
-        updateTime();
+        const apiKey = ""; // 執行環境會自動提供
+        const promptDisplay = document.getElementById('prompt-display');
+        const counter = document.getElementById('counter');
+        const resultContainer = document.getElementById('result-container');
+        const loadingArea = document.getElementById('loading-area');
+        const imageArea = document.getElementById('image-area');
+        const outputImage = document.getElementById('output-image');
+        const genBtn = document.getElementById('gen-btn');
 
-        // --- 核心數據庫與定義 (士/仕 已修訂) ---
-        const PIECE_DATA = {
-            '帥': { color: '紅', name: '帥', yin_yang: '陽', element: '金', organ: '肺/大腸', emotion: '憂傷肺' },
-            '將': { color: '黑', name: '將', yin_yang: '陰', element: '金', organ: '肺/大腸', emotion: '憂傷肺' },
-            // V1.0.9 修正: 紅方(陽)為仕, 黑方(陰)為士
-            '仕': { color: '紅', name: '仕', yin_yang: '陽', element: '金', organ: '肺/大腸', emotion: '憂傷肺' }, // Red (陽) Guard
-            '士': { color: '黑', name: '士', yin_yang: '陰', element: '金', organ: '肺/大腸', emotion: '憂傷肺' }, // Black (陰) Guard
-            '相': { color: '紅', name: '相', yin_yang: '陽', element: '火', organ: '心/小腸', emotion: '喜傷心' },
-            '象': { color: '黑', name: '象', yin_yang: '陰', element: '火', organ: '心/小腸', emotion: '喜傷心' },
-            '俥': { color: '紅', name: '俥', yin_yang: '陽', element: '木', organ: '肝/膽', emotion: '怒傷肝' },
-            '車': { color: '黑', name: '車', yin_yang: '陰', element: '木', organ: '肝/膽', emotion: '怒傷肝' },
-            '傌': { color: '紅', name: '傌', yin_yang: '陽', element: '木', organ: '肝/膽', emotion: '怒傷肝' },
-            '馬': { color: '黑', name: '馬', yin_yang: '陰', element: '木', organ: '肝/膽', emotion: '怒傷肝' },
-            '炮': { color: '紅', name: '炮', yin_yang: '陽', element: '水', organ: '腎/膀胱', emotion: '恐傷腎' },
-            '包': { color: '黑', name: '包', yin_yang: '陰', element: '水', organ: '腎/膀胱', emotion: '恐傷腎' },
-            '兵': { color: '紅', name: '兵', yin_yang: '陽', element: '土', organ: '脾/胃', emotion: '思傷脾' },
-            '卒': { color: '黑', name: '卒', yin_yang: '陰', element: '土', organ: '脾/胃', emotion: '思傷脾' },
-        };
+        let selectedPrompts = [];
 
-        // 32 支棋子定義 (包含重複)
-        let PIECE_POOL = [];
-        const PIECE_DEFS = [
-            { count: 1, name: '帥' }, { count: 1, name: '將' },
-            // V1.0.9 修正: 紅方(陽)為仕, 黑方(陰)為士
-            { count: 2, name: '仕' }, { count: 2, name: '士' },
-            { count: 2, name: '相' }, { count: 2, name: '象' },
-            { count: 2, name: '俥' }, { count: 2, name: '車' },
-            { count: 2, name: '傌' }, { count: 2, name: '馬' },
-            { count: 2, name: '炮' }, { count: 2, name: '包' },
-            { count: 5, name: '兵' }, { count: 5, name: '卒' },
-        ];
-        
-        // 初始化棋子池
-        PIECE_DEFS.forEach(def => {
-            for (let i = 0; i < def.count; i++) {
-                const pieceData = PIECE_DATA[def.name];
-                PIECE_POOL.push({
-                    name: def.name,
-                    color: pieceData.color,
-                    data: pieceData
-                });
-            }
-        });
-
-        // 卜卦模式相關變數
-        let availablePieces = [...PIECE_POOL]; // 可抽取的棋子副本
-        let drawnPieces = []; // 儲存已抽取的 5 個棋子 (依抽取順序)
-        // 核心邏輯：抽籤順序對應到卦位 (1st->中, 2nd->左, 3rd->右, 4th->上, 5th->下)
-        const DRAW_MAPPING = [
-            'center', // 第 1 抽 -> 中間 (卦主)
-            'left',   // 第 2 抽 -> 左邊 (平輩男性)
-            'right',  // 第 3 抽 -> 右邊 (平輩女性)
-            'top',    // 第 4 抽 -> 上面 (長輩)
-            'bottom'  // 第 5 抽 -> 下面 (晚輩)
-        ];
-        
-        const drawButton = document.getElementById('draw-button');
-        const submitButton = document.getElementById('submit-button');
-        const drawText = document.getElementById('draw-text');
-
-
-        // --- 分頁切換邏輯 ---
-        function switchView(viewId) {
-            document.getElementById('view-main-divination').style.display = 'none';
-            document.getElementById('view-quick-generate').style.display = 'none';
-            
-            document.getElementById(`view-${viewId}`).style.display = 'block';
-
-            // 更新 Tab 樣式
-            document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
-            if (viewId === 'main-divination') {
-                document.querySelector('[onclick="switchView(\'main-divination\')"]').classList.add('active');
-            } else if (viewId === 'quick-generate') {
-                document.querySelector('[onclick="switchView(\'quick-generate\')"]').classList.add('active');
-            }
-        }
-        
-        // 確保預設顯示主卜卦模式
-        switchView('main-divination');
-
-        // --- 通用顯示棋子函數 (V1.0.10 支援圓形/藥丸形切換) ---
-        function displayPiece(piece, slotId, isQuickMode = false) {
-            const prefix = isQuickMode ? 'quick-' : '';
-            const slotDisplay = document.getElementById(`${prefix}piece-display-${slotId}`);
-            
-            const colorClass = piece.color === '紅' ? 'red-piece' : 'black-piece';
-            
-            // 根據模式選擇形狀樣式
-            const shapeClass = isQuickMode ? 'circular-piece' : 'displayed-piece';
-            
-            // V1.0.8 移除棋子名稱前的紅/黑字，只保留漢字
-            slotDisplay.innerHTML = `
-                <span class="${shapeClass} ${colorClass}">
-                    ${piece.name}
-                </span>
-            `;
+        function addToPrompt(zh, en) {
+            if (selectedPrompts.some(item => item.en === en)) return;
+            selectedPrompts.push({ zh, en });
+            renderPrompts();
         }
 
-
-        // --- 卜卦模式：抽籤函數 ---
-        function drawPiece() {
-            if (drawnPieces.length >= 5) {
-                showCustomMessage('已抽出 5 支棋子，請提交解卦！');
+        function renderPrompts() {
+            if (selectedPrompts.length === 0) {
+                promptDisplay.innerHTML = '<span class="text-orange-300 font-bold italic p-2">點選下方的圖卡來組合...</span>';
+                counter.innerText = '0 個靈感';
                 return;
             }
-
-            // 1. 隨機抽取
-            const randomIndex = Math.floor(Math.random() * availablePieces.length);
-            const drawnPiece = availablePieces.splice(randomIndex, 1)[0];
-            drawnPieces.push(drawnPiece);
-
-            // 2. 確定擺放位置 (依 DRAW_MAPPING 順序)
-            const drawIndex = drawnPieces.length - 1; // 0 to 4
-            const slotId = DRAW_MAPPING[drawIndex];
-
-            // 3. 顯示棋子
-            displayPiece(drawnPiece, slotId, false);
-
-            // 4. 更新按鈕狀態
-            if (drawnPieces.length < 5) {
-                drawText.textContent = `抽出第 ${drawnPieces.length + 1} 支棋子 (共 5 支)`;
-            } else {
-                drawText.textContent = '已完成 5 支棋子抽取';
-                drawButton.disabled = true;
-                submitButton.disabled = false;
-            }
-        }
-
-        // --- 卜卦模式：重置函數 ---
-        function resetDivination() {
-            availablePieces = [...PIECE_POOL];
-            drawnPieces = [];
-            drawButton.disabled = false;
-            submitButton.disabled = true;
-            drawText.textContent = '抽出第 1 支棋子 (共 5 支)';
-            
-            // 清空卦位顯示
-            DRAW_MAPPING.forEach(slotId => {
-                document.getElementById(`piece-display-${slotId}`).innerHTML = '待抽...';
-            });
-            document.getElementById('formation-output').innerHTML = '';
-        }
-        
-        // --- 卜卦模式：提交表單處理 ---
-        document.getElementById('divination-form').addEventListener('submit', function(event) {
-            event.preventDefault();
-            const question = document.getElementById('question').value.trim();
-
-            if (!question) {
-                // 使用自定義模態框取代 alert
-                showCustomMessage('請輸入您的問題！');
-                return;
-            }
-            
-            if (drawnPieces.length !== 5) {
-                 // 使用自定義模態框取代 alert
-                showCustomMessage('請先抽出 5 支棋子才能解卦！');
-                return;
-            }
-
-            interpretDivination(question, drawnPieces);
-        });
-        
-        // 綁定抽籤按鈕事件
-        drawButton.addEventListener('click', drawPiece);
-        
-        // 簡易自定義訊息顯示 (取代 alert)
-        function showCustomMessage(message) {
-            const tempDiv = document.createElement('div');
-            tempDiv.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
-            tempDiv.innerHTML = `
-                <div class="bg-white p-6 rounded-lg shadow-xl max-w-sm w-full text-center">
-                    <p class="text-lg font-semibold text-gray-800">${message}</p>
-                    <button class="mt-4 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700" onclick="this.parentNode.parentNode.remove()">確定</button>
+            counter.innerText = `${selectedPrompts.length} 個靈感`;
+            promptDisplay.innerHTML = selectedPrompts.map((item, index) => `
+                <div class="prompt-item">
+                    <span>${item.zh}</span>
+                    <button onclick="removeItem(${index})" class="ml-2 text-red-500"><i class="fas fa-times-circle"></i></button>
                 </div>
-            `;
-            document.body.appendChild(tempDiv);
+            `).join('');
         }
 
-        // --- V1.0.7 繼承：格局分析邏輯 ---
-        function checkRulerFormation(hexagram) {
-            const pieces = hexagram.map(p => p.name);
-            const generals = pieces.filter(p => p === '帥' || p === '將');
-            const pawns = pieces.filter(p => p === '兵' || p === '卒');
-            
-            let isMingJun = false; // 明君格
-            let isBaoJun = false; // 暴君格
-
-            // 1. 檢查 紅帥/黑卒 組合
-            const hasShuai = pieces.includes('帥');
-            const hasZu = pieces.includes('卒');
-            
-            // 2. 檢查 黑將/紅兵 組合
-            const hasJiang = pieces.includes('將');
-            const hasBing = pieces.includes('兵');
-
-            // --- 明君格判斷 (將看見兵，帥看見卒) ---
-            if ((hasJiang && hasBing) || (hasShuai && hasZu)) {
-                isMingJun = true;
-            }
-            
-            // --- 暴君格判斷 (將沒有看見兵，帥沒有看見卒) ---
-            if (hasJiang && !hasBing) {
-                 // 將 (黑) 存在，但沒有 紅兵 (群眾/人民) -> 暴君象徵
-                isBaoJun = true;
-            }
-            if (hasShuai && !hasZu) {
-                 // 帥 (紅) 存在，但沒有 黑卒 (群眾/人民) -> 暴君象徵
-                isBaoJun = true;
-            }
-
-            // 特殊情況：如果同時滿足明君和暴君的條件 (例如：有將有兵，但也有帥沒卒)
-            // 為了簡化解讀，我們傾向於先判斷明君格，因為它代表有「看到」群眾
-            if (isMingJun && isBaoJun) {
-                return {
-                    type: '混合格',
-                    summary: '卦象存在矛盾，雖有明君的格局，但在其他方面也顯示出暴君的傾向，決策上易有反覆。',
-                    details: '卦中兼具明君與暴君的徵兆，代表卦主在處理不同面向的問題時，態度和決策方式會有所不同，內心存在掙扎或矛盾。'
-                };
-            } else if (isMingJun) {
-                return {
-                    type: '明君格',
-                    summary: '恭喜！此為 **明君格局**。',
-                    details: '將看見兵，帥看見卒，領導者能見到人民的需求，代表卦主能做出明智的決策，情緒穩定，擁有良好的執行力。'
-                };
-            } else if (isBaoJun) {
-                return {
-                    type: '暴君格',
-                    summary: '警惕！此為 **暴君格局**。',
-                    details: '將沒有看到兵，帥沒有看到卒，領導者與人民的需求脫節，代表卦主容易有情緒起伏較大及做出不明智的決擇，需警惕自我中心。'
-                };
-            } else if (generals.length > 0) {
-                 // 有將帥但既非明君也非暴君 (例如：有將/帥但另一組兵卒也同時不存在)
-                return {
-                    type: '孤立格',
-                    summary: '卦象中有將帥，但未形成明君或暴君格局。',
-                    details: '領導者（將/帥）能量強大，但缺乏明確的「群眾/基層」連結或對應的挑戰，需透過其他五行分析來判斷吉凶。'
-                }
-            } else {
-                return {
-                    type: '無將帥格',
-                    summary: '此卦象中無將帥主導，格局平穩。',
-                    details: '代表問事者或當前情境中，沒有強勢的領導者或決策核心，結果需完全仰賴人際互動（五行生剋）和陰陽平衡。'
-                };
-            }
+        function removeItem(index) {
+            selectedPrompts.splice(index, 1);
+            renderPrompts();
         }
 
-
-        // --- 核心解卦函數 (V1.0.9) ---
-        function interpretDivination(question, pieces) {
-            const resultArea = document.getElementById('result-area');
-            const display = document.getElementById('hexagram-display');
-            const formationOutput = document.getElementById('formation-output'); // New
-            const output = document.getElementById('interpretation-output');
-            const guidanceOutput = document.getElementById('guidance-output');
-            resultArea.style.display = 'block';
-            
-            // 重新排序 drawnPieces 陣列，使其符合 [上, 左, 中, 右, 下] 的角色順序 (非抽籤順序)
-            // Draw Order (pieces index): [0:中, 1:左, 2:右, 3:上, 4:下]
-            // Final Role Order: [上, 左, 中, 右, 下] -> [pieces[3], pieces[1], pieces[0], pieces[2], pieces[4]]
-            const newOrder = [
-                pieces[3], // 1. 長輩 (上) <-- 4th Draw
-                pieces[1], // 2. 平輩男性 (左) <-- 2nd Draw
-                pieces[0], // 3. 卦主：我 (中) <-- 1st Draw
-                pieces[2], // 4. 平輩女性 (右) <-- 3rd Draw
-                pieces[4]  // 5. 晚輩 (下) <-- 5th Draw
-            ];
-            
-            const POSITION_ROLES = [
-                { pos: 1, role: '長輩 (上)', group: 'Elder' },
-                { pos: 2, role: '平輩男性 (左)', group: 'MalePeer' },
-                { pos: 3, role: '卦主：我 (中)', group: 'Self' },
-                { pos: 4, role: '平輩女性 (右)', group: 'FemalePeer' },
-                { pos: 5, role: '晚輩 (下)', group: 'Junior' }
-            ];
-
-            const hexagram = newOrder.map((p, index) => ({
-                color: p.color,
-                name: p.name,
-                data: p.data,
-                position: index + 1,
-                role: POSITION_ROLES[index].role,
-                element: p.data.element,
-                isYin: p.data.yin_yang === '陰'
-            }));
-
-            const selfPiece = hexagram[2];
-            const redCount = hexagram.filter(p => p.color === '紅').length;
-            const blackCount = hexagram.filter(p => p.color === '黑').length;
-            const elementColor = { '金': '#FFD700', '木': '#38B2AC', '水': '#4299E1', '火': '#F56565', '土': '#ECC94B' };
-            const positionNames = ['上', '左', '中', '右', '下'];
-
-            // --- 1. 卦象視覺化顯示 (V1.0.8 修正：移除顏色字樣) ---
-            let displayHTML = `<h3>【您起出的卦象】</h3>`;
-            // 修正：移除顏色字樣
-            displayHTML += `<p>卦位分配（角色順序）： ${hexagram[0].name} (長輩) | ${hexagram[1].name} (平輩男性) | **${hexagram[2].name} (卦主)** | ${hexagram[3].name} (平輩女性) | ${hexagram[4].name} (晚輩)</p>`;
-            
-            
-            hexagram.forEach((p, index) => {
-                const pieceStyle = `
-                    display: inline-block;
-                    margin: 5px;
-                    padding: 10px 18px;
-                    border-radius: 20px;
-                    font-weight: 700;
-                    color: white;
-                    text-align: center;
-                    font-size: 1.1em;
-                    min-width: 80px;
-                    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-                    background-color: ${elementColor[p.element]};
-                    /* 邊框顏色仍代表紅黑（陰陽） */
-                    border: 2px solid ${p.color === '紅' ? '#800000' : '#000000'}; 
-                `;
-                displayHTML += `
-                    <span style="${pieceStyle}"> 
-                        ${positionNames[index]} / ${p.name} <br> <small style="font-weight: normal;"> (${p.role.split('(')[0]})</small>
-                    </span>
-                `;
-            });
-            display.innerHTML = displayHTML;
-
-            // --- 1.5. V1.0.7 繼承：格局分析輸出 ---
-            const formationResult = checkRulerFormation(hexagram);
-            let formationHTML = `<div class="p-4 mt-5 border rounded-lg shadow-md `;
-
-            if (formationResult.type === '明君格') {
-                formationHTML += `bg-green-100 border-green-500">`;
-            } else if (formationResult.type === '暴君格') {
-                formationHTML += `bg-red-100 border-red-500">`;
-            } else {
-                formationHTML += `bg-gray-100 border-gray-500">`;
-            }
-            
-            formationHTML += `<h3 class="text-xl font-bold text-gray-800 mb-2">【格局分析：${formationResult.type}】</h3>`;
-            formationHTML += `<p class="text-lg font-semibold text-gray-700">${formationResult.summary}</p>`;
-            formationHTML += `<p class="text-sm text-gray-600 mt-2">${formationResult.details}</p></div>`;
-            formationOutput.innerHTML = formationHTML;
-
-
-            // --- 5行生剋定義與函數 (V1.0.6繼承) ---
-            const GENERATION_RULE = { '木': '火', '火': '土', '土': '金', '金': '水', '水': '木' };
-            const RESTRAINT_RULE = { '木': '土', '土': '水', '水': '火', '火': '金', '金': '木' };
-
-            function getFiveElementRelationship(elementA, elementB) {
-                if (elementA === elementB) return '相同 (和諧融洽)';
-                if (GENERATION_RULE[elementA] === elementB) return '生助 (付出/支持)';
-                if (GENERATION_RULE[elementB] === elementA) return '被生助 (得到支持/貴人)';
-                if (RESTRAINT_RULE[elementA] === elementB) return '剋制 (制約/消耗)';
-                if (RESTRAINT_RULE[elementB] === elementA) return '被剋制 (壓力/挑戰)';
-                return '無直接關聯';
-            }
-
-            // --- 2. 易經・陰陽平衡分析 (V1.0.6繼承) ---
-            let yinYangSummary = `<div class="p-4 bg-blue-50 border-l-4 border-blue-500 rounded-lg mt-4"><h4>【易經・陰陽智慧：吉凶順逆之判】</h4>`;
-            yinYangSummary += `<p>卦象總結：紅方（陽氣/物質）有 ${redCount} 個，黑方（陰氣/精神）有 ${blackCount} 個。</p>`;
-            
-            if ((redCount === 3 && blackCount === 2) || (redCount === 2 && blackCount === 3)) {
-                yinYangSummary += `<p><strong>◎ 陰陽協調 (順水行舟局)：</strong>象徵陰陽和諧，氣機流暢。整體狀態處於相對**順遂、平衡**的狀態，事半功倍。</p>`;
-            } else if (redCount === 5 || blackCount === 5 || (redCount === 4 && blackCount === 1) || (redCount === 1 && blackCount === 4)) {
-                yinYangSummary += `<p><strong>◎ 陰陽不協調 (氣血不暢局)：</strong>卦氣偏頗，提示狀態失衡，應及時調整心態與作息，或問事條件尚未成熟。</p>`;
-            } else {
-                yinYangSummary += `<p><strong>◎ 陰陽平衡一般：</strong>吉凶關鍵需結合五行生剋判斷。</p>`;
-            }
-            yinYangSummary += `</div>`;
-
-            // --- 3. 黃帝內經・中醫臟腑分析 (V1.0.9) ---
-            let tcmSummary = `<div class="p-4 bg-green-50 border-l-4 border-green-500 rounded-lg mt-4"><h4>【黃帝內經・中醫智慧：觀自身狀態】</h4>`;
-            // 修正：卦主為 ${selfPiece.name}
-            tcmSummary += `<p><strong>卦主主狀態（中央）：：</strong>您為 **${selfPiece.name}**。</p>`;
-            tcmSummary += `<p><strong>五行屬性：</strong><span style="color:${elementColor[selfPiece.element]}; font-weight: bold;">${selfPiece.element}</span>。</p>`;
-            tcmSummary += `<p><strong>情志提醒：：</strong>${selfPiece.data.emotion}。提醒您在處理問題時，可能因${selfPiece.data.emotion.split('(')[0]}而影響${selfPiece.data.organ}，需調整心性。</p>`;
-            tcmSummary += `</div>`;
-            
-            // --- 4. 五行人際互動分析 (V1.0.9) ---
-            let interactionOutput = '<h4 class="text-xl font-bold text-gray-800 mt-6 mb-3">【五行・人際互動關係：緣分與助力】</h4>';
-            interactionOutput += '<p class="text-gray-600 mb-4">此處以卦主（中央棋子）的五行為中心，觀察與周圍四個卦位（上、左、右、下）的人際互動關係：</p>';
-            interactionOutput += '<table class="min-w-full divide-y divide-gray-200 border border-gray-200 rounded-lg overflow-hidden"><thead><tr class="bg-gray-50 text-xs font-medium text-gray-500 uppercase tracking-wider"><th>卦位</th><th>棋子</th><th>五行屬性</th><th>與卦主關係</th><th>解讀 (相生/相剋)</th></tr></thead><tbody class="divide-y divide-gray-200">';
-
-            const selfElement = selfPiece.element;
-
-            for (let i = 0; i < 5; i++) {
-                if (i === 2) continue;
-
-                const otherPiece = hexagram[i];
-                const relationship = getFiveElementRelationship(selfElement, otherPiece.element);
-                let interpretation = '';
-                
-                if (relationship.includes('生助')) { // 卦主生他人 (付出)
-                    interpretation = `卦主會付出、主動幫扶${otherPiece.role.split('(')[0]}，雖勞心但能建立善緣。`;
-                } else if (relationship.includes('被生助')) { // 他人生卦主 (貴人)
-                    interpretation = `**${otherPiece.role.split('(')[0]}是您的貴人**，能得到他們的支持與幫助，應善用此緣。`;
-                } else if (relationship.includes('剋制')) { // 卦主剋他人 (制約/消耗)
-                    interpretation = `卦主對${otherPiece.role.split('(')[0]}有制約、消耗或約束力，需留意關係上的摩擦，避免過度強勢。`;
-                } else if (relationship.includes('被剋制')) { // 他人剋卦主 (壓力/挑戰)
-                    interpretation = `**${otherPiece.role.split('(')[0]}會給您帶來壓力或挑戰**，需付出較多心力應對。`;
-                } else if (relationship.includes('相同')) {
-                    interpretation = `與${otherPiece.role.split('(')[0]}相處融洽，溝通順暢，但缺乏外力激發或幫助。`;
-                }
-
-                interactionOutput += `
-                    <tr class="hover:bg-gray-100">
-                        <td class="px-6 py-4 whitespace-nowrap text-center">${otherPiece.role}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-center">${otherPiece.name}</td> <!-- 修正：移除顏色字樣 -->
-                        <td class="px-6 py-4 whitespace-nowrap text-center">${otherPiece.element}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-center font-bold">${relationship}</td>
-                        <td class="px-6 py-4">${interpretation}</td>
-                    </tr>
-                `;
-            }
-            interactionOutput += '</tbody></table>';
-
-
-            // --- 5. 佛法智慧指引 (V1.0.6繼承) ---
-            let dharmaGuidanceText = '';
-            
-            // 結合 V1.0.7 的格局分析，強化指引
-            let extraGuidance = '';
-            if (formationResult.type === '暴君格') {
-                extraGuidance = '此卦象為暴君格局，提醒您當前的問題可能源於**自我的固執或過大的情緒波動**。佛法教導**「諸行無常，是生滅法」**，不應執著於短暫的權力或不滿，應修習「忍辱」波羅蜜，謙卑聆聽不同的聲音。';
-            } else if (formationResult.type === '明君格') {
-                extraGuidance = '此卦象為明君格局，代表您具備智慧與決斷力。佛法教導**「菩薩發心，利益眾生」**，應將此福報與能力，用於更廣大的利他事業，避免獨善其身。';
-            }
-
-            if (yinYangSummary.includes('順水行舟局')) {
-                dharmaGuidanceText += `<p>此卦象陰陽協調，萬事處於順境，正是修行人所稱的「福報現前」之時。佛法云：**「修福不修慧，福盡還墮落。」** 此時應警惕勿生傲慢、貪著順遂之樂，更要將此順境的能量轉為精進修慧，廣結善緣，**行布施**（財、法、無畏），使福報如泉源不斷。</p>`;
-                if (extraGuidance) dharmaGuidanceText += `<p class="mt-2 text-red-700 font-bold">【特別提示】${extraGuidance}</p>`;
-            } else if (yinYangSummary.includes('氣血不暢局')) {
-                dharmaGuidanceText += `<p>此卦象顯示陰陽失衡，提示目前心態或外境有極端偏執。您需要觀察自己的內心是否**「執著」**於某一結果，或被**「貪、瞋、癡」**三毒所縛。建議：</p>
-                    <ul class="list-disc list-inside ml-4 mt-2">
-                        <li>**中醫觀點：** 針對${selfPiece.data.emotion.split('(')[0].trim()}進行情志調適，透過靜坐、轉念來平復心緒。</li>
-                        <li>**佛法觀點：** 應當學習**「看破」與「放下」**。看破世間萬物因緣和合、皆是無常；放下對結果的執著，專注於當下的因地努力。**常唸「南無阿彌陀佛」**，淨化心靈，將心安住於清淨，則外在的失衡自然能平衡。</li>
-                    </ul>
-                `;
-                if (extraGuidance) dharmaGuidanceText += `<p class="mt-2 text-red-700 font-bold">【特別提示】${extraGuidance}</p>`;
-            } else {
-                dharmaGuidanceText += `<p>此卦象顯示您有能力掌控局面，但成敗取決於您的心念。佛法智慧強調**「萬法唯心造」**。應當將注意力放在您問事的目的上，是否符合**利益眾生、自利利他**的菩薩精神。若發心純正，雖有阻礙亦能克服。</p>`;
-                if (extraGuidance) dharmaGuidanceText += `<p class="mt-2 text-red-700 font-bold">【特別提示】${extraGuidance}</p>`;
-            }
-
-
-            output.innerHTML = `
-                <p class="text-lg font-semibold text-gray-800">您所問之事：<span class="text-red-600">${question}</span></p>
-                ${yinYangSummary}
-                ${tcmSummary}
-                <hr class="my-6 border-t-2 border-dashed border-gray-300">
-                ${interactionOutput}
-            `;
-
-            guidanceOutput.innerHTML = `
-                <h4 class="text-xl font-bold text-red-700">【佛法智慧・道理指引】</h4>
-                ${dharmaGuidanceText}
-                <p class="italic text-sm text-gray-600 mt-4">**象棋卜卦師總結：** 卦象只是生命劇本的提示，心念才是編劇。一切善惡吉凶，皆由您當下的發心與行為所決定。願您以佛法的智慧，了悟人生，得身心安樂，終得解脫。</p>
-            `;
-            
-            // 重置狀態以進行下一次卜卦
-            resetDivination();
-        }
-        
-        // --- 快速起卦模式邏輯 (V1.0.12) ---
-
-        document.getElementById('quick-draw-button').addEventListener('click', quickDrawHexagram);
-
-        function quickDrawHexagram() {
-            let tempAvailablePieces = [...PIECE_POOL];
-            let quickDrawnPieces = [];
-            
-            // 重置顯示
-            DRAW_MAPPING.forEach(slotId => {
-                document.getElementById(`quick-piece-display-${slotId}`).innerHTML = '待生成...';
-            });
-            document.getElementById('quick-result-output').style.display = 'none';
-
-            // 執行 5 次抽取 (順序：中, 左, 右, 上, 下)
-            for (let i = 0; i < 5; i++) {
-                const randomIndex = Math.floor(Math.random() * tempAvailablePieces.length);
-                const drawnPiece = tempAvailablePieces.splice(randomIndex, 1)[0];
-                quickDrawnPieces.push(drawnPiece);
-
-                // 確定擺放位置
-                const slotId = DRAW_MAPPING[i]; // i = 0 -> center, i = 1 -> left, ...
-                
-                // 顯示棋子 (Quick Mode: true -> 圓形棋子)
-                displayPiece(drawnPiece, slotId, true);
-            }
-            
-            // 生成可複製的代碼 (Drawn Order: Center, Left, Right, Top, Bottom)
-            // V1.0.8 修正：代碼輸出只包含棋子名稱
-            const pieceNames = quickDrawnPieces.map(p => p.name);
-            const outputText = `[${pieceNames.join(', ')}]`;
-
-            // 輸出結果供複製
-            document.getElementById('quick-data-output').value = outputText;
-            document.getElementById('quick-result-output').style.display = 'block';
-            document.getElementById('copy-message').classList.add('hidden');
+        function clearPrompt() {
+            selectedPrompts = [];
+            renderPrompts();
+            resultContainer.style.display = 'none';
         }
 
-        // --- 複製到剪貼簿功能 (V1.0.6繼承) ---
-        function copyToClipboard(elementId) {
-            const copyText = document.getElementById(elementId);
-            copyText.select();
-            copyText.setSelectionRange(0, 99999); // For mobile devices
+        async function generateImage() {
+            if (selectedPrompts.length === 0) {
+                alert("籃子是空的喔！請先選幾個圖卡。");
+                return;
+            }
+
+            // 顯示結果區與載入動畫
+            resultContainer.style.display = 'block';
+            loadingArea.classList.remove('hidden');
+            imageArea.classList.add('hidden');
+            genBtn.disabled = true;
+            genBtn.classList.add('opacity-50');
+
+            const basePrompt = selectedPrompts.map(item => item.en).join(', ');
+            const finalPrompt = `A vivid, child-friendly illustration of ${basePrompt}. Bright colors, clear shapes, magical atmosphere, high resolution.`;
+
             try {
-                document.execCommand('copy');
-                document.getElementById('copy-message').classList.remove('hidden');
-                setTimeout(() => {
-                    document.getElementById('copy-message').classList.add('hidden');
-                }, 2000);
-            } catch (err) {
-                console.error('Failed to copy text: ', err);
+                const response = await fetchWithRetry(
+                    `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${apiKey}`,
+                    {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            instances: { prompt: finalPrompt },
+                            parameters: { sampleCount: 1 }
+                        })
+                    }
+                );
+
+                const data = await response.json();
+                if (data.predictions && data.predictions[0].bytesBase64Encoded) {
+                    const imageUrl = `data:image/png;base64,${data.predictions[0].bytesBase64Encoded}`;
+                    outputImage.src = imageUrl;
+                    loadingArea.classList.add('hidden');
+                    imageArea.classList.remove('hidden');
+                } else {
+                    throw new Error("生成失敗");
+                }
+            } catch (error) {
+                console.error(error);
+                alert("魔法電力不足，請再試一次！");
+                resultContainer.style.display = 'none';
+            } finally {
+                genBtn.disabled = false;
+                genBtn.classList.remove('opacity-50');
             }
         }
 
+        async function fetchWithRetry(url, options, retries = 5) {
+            let delay = 1000;
+            for (let i = 0; i < retries; i++) {
+                try {
+                    const res = await fetch(url, options);
+                    if (res.ok) return res;
+                } catch (e) {}
+                await new Promise(r => setTimeout(r, delay));
+                delay *= 2;
+            }
+            throw new Error("Retry failed");
+        }
+
+        function downloadImg() {
+            const link = document.createElement('a');
+            link.href = outputImage.src;
+            link.download = `my-magic-art-${Date.now()}.png`;
+            link.click();
+        }
+
+        function copyFullPrompt() {
+            if (selectedPrompts.length === 0) return;
+            const text = selectedPrompts.map(item => item.en).join(', ');
+            const textArea = document.createElement("textarea");
+            textArea.value = text;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+            alert("咒語已複製！");
+        }
     </script>
 </body>
 </html>
